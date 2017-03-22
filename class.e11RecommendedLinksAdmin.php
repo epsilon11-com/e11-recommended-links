@@ -73,9 +73,10 @@ class e11RecommendedLinksAdmin {
     $sql = 'CREATE TABLE ' . self::$linksTableName . ' (
 		    id integer NOT NULL AUTO_INCREMENT,
 		    created datetime DEFAULT "0000-00-00 00:00:00" NOT NULL,
-		    display_mode tinyint NOT NULL DEFAULT 1, 
+		    display_mode tinyint NOT NULL DEFAULT 1,
+		    name varchar(512) NOT NULL,
 		    url varchar(1024) NOT NULL,
-		    description text NOT NULL,
+		    description text NOT NULL DEFAULT "",
 		    
 		    PRIMARY KEY (id)
       );';
@@ -182,33 +183,9 @@ class e11RecommendedLinksAdmin {
 
   public static function display_recommended_links_control()
   {
-    global $wpdb;
-
-    // Load a page of links from the table.
-
-    // [TODO] Load from param
-    $page = 1;
-
-    if ($page < 1) {
-      $page = 1;
-    }
-
-    $limit = 25;
-    $offset = ($page - 1) * $limit;
-    $order_by = 'id DESC';
-
-    $links = $wpdb->get_results('
-      SELECT id, created, url, description, display_mode 
-      FROM ' . self::$linksTableName . '
-      ORDER BY ' . $order_by . '
-      LIMIT ' . $limit . ' OFFSET ' . $offset . '
-    ');
-
     $linksTable = new RecommendedLinksListTable();
 
     $linksTable->prepare_items();
-
-    $linksTable->items = $links;
 
     $linksTable->display();
 

@@ -21,13 +21,17 @@ require_once( ABSPATH . '/wp-admin/includes/admin.php' );
 
 class RecommendedLinksListTable extends WP_List_Table {
   public function __construct() {
-    parent::__construct();
-
+    parent::__construct(array(
+      'plural' => 'links',
+      'singular' => 'link',
+      'ajax' => true
+    ));
   }
 
   public function manage_columns() {
     return array(
-      'id' => 'ID',
+      'cb' => 'cb',
+      'name' => 'Name',
       'url' => 'URL',
       'description' => 'Description',
       'display_mode' => 'Display mode',
@@ -37,12 +41,41 @@ class RecommendedLinksListTable extends WP_List_Table {
 
   public function get_columns() {
     return array(
-      'id' => 'ID',
+      'cb' => '<input type="checkbox" />',
+      'name' => 'Name',
       'url' => 'URL',
       'description' => 'Description',
       'display_mode' => 'Display mode',
       'created' => 'Created'
     );
+  }
+
+  protected function get_sortable_columns() {
+    return array(
+      'name' => 'name',
+      'url' => 'url',
+      'created' => array('created', true)
+    );
+  }
+
+  public function column_cb($item) {
+    return '<input id="cb-select-' . $item->id
+              . '" type="checkbox" name="link[]" value="' . $item->id . '" />';
+  }
+
+  public function column_display_mode($item) {
+    switch($item->display_mode) {
+      case 1:
+        return 'Post index';
+
+      case 2:
+        return 'Sidebar widget';
+
+      case 3:
+        return 'Index and widget';
+    }
+
+    return '(invalid)';
   }
 
   public function column_default($item, $column_name)
@@ -57,14 +90,55 @@ class RecommendedLinksListTable extends WP_List_Table {
   public function prepare_items() {
     global $wpdb;
 
+    // Set name of recommended links table and count its records.
+
     $links_table = $wpdb->prefix . 'e11_recommended_links';
 
     $total_items = $wpdb->get_var('SELECT COUNT(id) FROM ' . $links_table);
 
+    // Read current page number and set number of items/page.
+
+    $page = $this->get_pagination_arg('page');
+    $limit = 10;
+
     $this->set_pagination_args(array(
       'total_items' => $total_items,
-      'per_page' => 25
+      'per_page' => $limit
     ));
+
+    // Read and validate sort order field and direction.
+
+    if (isset($_REQUEST['orderby']) && isset($_REQUEST['order'])) {
+      $order_by = $_REQUEST['orderby'];
+      $order = ($_REQUEST['order'] === 'asc' ? 'asc' : 'desc');
+
+      if (!in_array(
+                    $order_by, array_keys($this->get_sortable_columns()))) {
+
+        // Ignore "order by" if field isn't a sortable column.
+
+        $order_by = 'id';
+        $order = 'desc';
+      }
+    } else {
+      $order_by = 'id';
+      $order = 'desc';
+    }
+
+    // Calculate offset for query.
+
+    $offset = ($page - 1) * $limit;
+
+    // Read page of links from the table and populate the list of items in
+    // the object with the results.
+
+    $links = $wpdb->get_results('
+      SELECT id, name, created, url, description, display_mode 
+      FROM ' . $links_table . '
+      ORDER BY ' . $order_by . ' ' . $order . '
+      LIMIT ' . $limit . ' OFFSET ' . $offset);
+
+    $this->items = $links;
   }
 
 }
