@@ -60,21 +60,27 @@ class RecommendedLinksListTable extends WP_List_Table {
    * of WP_List_Table, but doesn't seem to take effect?
    *
    * [TODO] Figure out how to get this to work, to get rid of manage_columns()
-   * if it's redundant.  It's definitely not getting called at present for
-   * some reason.
+   * if it's redundant.
+   *
+   * It's getting called for get_default_primary_column_name, but not, for
+   * some reason, get_column_headers() in wp-admin/includes/screen.php:
+   *
+   * WP_List_Table->get_column_info( )	.../class-wp-list-table.php:1268
+   * WP_List_Table->get_primary_column_name( )	.../class-wp-list-table.php:983
+   * WP_List_Table->get_default_primary_column_name( )	.../class-wp-list-table.php:950
    *
    * @return array
    */
   public function get_columns() {
-    exit(0);
-//    return array(
-//      'cb' => '<input type="checkbox" />',
-//      'name' => 'Name',
-//      'url' => 'URL',
-//      'description' => 'Description',
-//      'display_mode' => 'Display mode',
-//      'created' => 'Created'
-//    );
+    // trigger_error('in get columns');
+    return array(
+      'cb' => '<input type="checkbox" />',
+      'name' => 'Name',
+      'url' => 'URL',
+      'description' => 'Description',
+      'display_mode' => 'Display mode',
+      'created' => 'Created'
+    );
   }
 
   /**
@@ -204,5 +210,5 @@ class RecommendedLinksListTable extends WP_List_Table {
 
 }
 
-//add_filter('manage_settings_page_e11_recommended_links_columns',
-//                        array('RecommendedLinksListTable', 'manage_columns'));
+add_filter('manage_settings_page_e11_recommended_links_columns',
+                        array('RecommendedLinksListTable', 'manage_columns'));
