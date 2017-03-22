@@ -20,6 +20,21 @@
 require_once( ABSPATH . '/wp-admin/includes/admin.php' );
 
 class RecommendedLinksListTable extends WP_List_Table {
+  public function __construct() {
+    parent::__construct();
+
+  }
+
+  public function manage_columns() {
+    return array(
+      'id' => 'ID',
+      'url' => 'URL',
+      'description' => 'Description',
+      'display_mode' => 'Display mode',
+      'created' => 'Created'
+    );
+  }
+
   public function get_columns() {
     return array(
       'id' => 'ID',
@@ -53,3 +68,6 @@ class RecommendedLinksListTable extends WP_List_Table {
   }
 
 }
+
+add_filter('manage_settings_page_e11_recommended_links_columns',
+                        array('RecommendedLinksListTable', 'manage_columns'));
