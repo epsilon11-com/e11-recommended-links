@@ -31,48 +31,16 @@ class RecommendedLinksListTable extends WP_List_Table {
       'singular' => 'link',
       'ajax' => true
     ));
+
   }
 
   /**
-   * Filter callback passed to
-   * "manage_settings_page_e11_recommended_links_columns" hook.  The
-   * "manage_{$screen->id}_columns" hook is created in get_column_headers()
-   * in wp-admin/includes/screen.php and used by
-   * WP_List_Table::get_column_info() to get the list of columns.
+   * Mandatory override from WP_List_Table.  Return list of columns and
+   * associated labels.
    *
    * @return array Associative array of fieldname => "Displayed label"
    */
-
-  public function manage_columns() {
-    return array(
-      'cb' => '<input type="checkbox" />',
-      'name' => 'Name',
-      'url' => 'URL',
-      'description' => 'Description',
-      'display_mode' => 'Display mode',
-      'created' => 'Created'
-    );
-  }
-
-  /**
-   * Mandatory override from WP_List_Table.  I thought this did what
-   * manage_columns() is doing in this class.  It's called in the constructor
-   * of WP_List_Table, but doesn't seem to take effect?
-   *
-   * [TODO] Figure out how to get this to work, to get rid of manage_columns()
-   * if it's redundant.
-   *
-   * It's getting called for get_default_primary_column_name, but not, for
-   * some reason, get_column_headers() in wp-admin/includes/screen.php:
-   *
-   * WP_List_Table->get_column_info( )	.../class-wp-list-table.php:1268
-   * WP_List_Table->get_primary_column_name( )	.../class-wp-list-table.php:983
-   * WP_List_Table->get_default_primary_column_name( )	.../class-wp-list-table.php:950
-   *
-   * @return array
-   */
   public function get_columns() {
-    // trigger_error('in get columns');
     return array(
       'cb' => '<input type="checkbox" />',
       'name' => 'Name',
@@ -144,10 +112,16 @@ class RecommendedLinksListTable extends WP_List_Table {
   }
 
   /**
-   * [TODO] Write.
+   * Require administrator access for AJAX interaction.
+   *
+   * [TODO] Add capacity to edit recommended links and assign that to
+   *        Administrator and Editor roles on plugin activation, and
+   *        check for that capacity here instead.
    */
   public function ajax_user_can() {
-    die( 'function WP_List_Table::ajax_user_can() must be over-ridden in a sub-class.' );
+    $user = wp_get_current_user();
+
+    return in_array('administrator', $user->roles);
   }
 
   /**
@@ -156,6 +130,21 @@ class RecommendedLinksListTable extends WP_List_Table {
    */
   public function prepare_items() {
     global $wpdb;
+
+    // Generate column headers structure.  This is a four part array
+    // containing:
+    //
+    // * all columns/labels (get_columns() output)
+    // * array of fields to be hidden
+    // * sortable columns (get_sortable_columns() output)
+    // * name of primary field
+
+    $this->_column_headers = array(
+      $this->get_columns(),
+      array(),
+      $this->get_sortable_columns(),
+      'id'
+    );
 
     // Set name of recommended links table and count its records.
 
@@ -210,5 +199,3 @@ class RecommendedLinksListTable extends WP_List_Table {
 
 }
 
-add_filter('manage_settings_page_e11_recommended_links_columns',
-                        array('RecommendedLinksListTable', 'manage_columns'));
