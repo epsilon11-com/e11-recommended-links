@@ -29,9 +29,8 @@ class RecommendedLinksListTable extends WP_List_Table {
     parent::__construct(array(
       'plural' => 'links',
       'singular' => 'link',
-      'ajax' => true
+      'ajax' => false
     ));
-
   }
 
   /**
@@ -109,19 +108,6 @@ class RecommendedLinksListTable extends WP_List_Table {
   public function column_default($item, $column_name)
   {
     return $item->$column_name;
-  }
-
-  /**
-   * Require administrator access for AJAX interaction.
-   *
-   * [TODO] Add capacity to edit recommended links and assign that to
-   *        Administrator and Editor roles on plugin activation, and
-   *        check for that capacity here instead.
-   */
-  public function ajax_user_can() {
-    $user = wp_get_current_user();
-
-    return in_array('administrator', $user->roles);
   }
 
   /**
