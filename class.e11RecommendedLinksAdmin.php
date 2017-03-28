@@ -413,7 +413,19 @@ class e11RecommendedLinksAdmin {
 
     echo '
       <div class="wrap">
-        <h1>' . esc_html(get_admin_page_title()) . '</h1>
+        <h1>' . esc_html(get_admin_page_title());
+
+    // [TODO] Set link to page to add recommended link
+    
+    if (current_user_can('manage_e11_recommended_links')) {
+      echo '
+        <a href="" class="page-title-action">'
+          . esc_html_x('Add New', 'e11RecommendedLinks')
+          . '</a>
+      ';
+    }
+
+    echo '</h1>        
         <form action="options.php" method="post">
     ';
 

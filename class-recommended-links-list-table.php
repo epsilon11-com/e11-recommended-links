@@ -81,6 +81,34 @@ class RecommendedLinksListTable extends WP_List_Table {
   }
 
   /**
+   * Add actions to the row of each item under the primary field
+   * (specified as 'name' elsewhere).  Do not display if the user does
+   * not have the capability to modify an item.
+   *
+   * @param object $item Link record
+   * @param string $column_name Column to generate actions for
+   * @param string $primary Name of primary column
+   * @return string HTML output
+   */
+  protected function handle_row_actions($item, $column_name, $primary) {
+    if ($column_name !== $primary) {
+      return '';
+    }
+
+    if (current_user_can('manage_e11_recommended_links')) {
+      return '
+            <div class="row-actions">
+                <span class="trash">
+                    <a class="submitdelete" href="">Delete</a>
+                </span>
+            </div>';
+    } else {
+      return '';
+    }
+  }
+
+
+  /**
    * Custom output for "cb" column (the checkbox at the left for row selection)
    *
    * @param object $item Link record
@@ -89,6 +117,23 @@ class RecommendedLinksListTable extends WP_List_Table {
   public function column_cb($item) {
     return '<input id="cb-select-' . $item->id
               . '" type="checkbox" name="link[]" value="' . $item->id . '" />';
+  }
+
+  /**
+   * Custom output for "name" column, creating link to page to edit item if
+   * the user has the capability.
+   *
+   * [TODO] Generate the correct link for the edit page
+   *
+   * @param object $item Link record
+   * @return string HTML output for field
+   */
+  public function column_name($item) {
+    if (current_user_can('manage_e11_recommended_links')) {
+      return '<a class="row-title" href="/edit/link/' . $item->id . '">' . $item->name . '</a>';
+    } else {
+      return $item->name;
+    }
   }
 
   /**
@@ -144,7 +189,7 @@ class RecommendedLinksListTable extends WP_List_Table {
       $this->get_columns(),
       array(),
       $this->get_sortable_columns(),
-      'id'
+      'name'
     );
 
     // Set name of recommended links table and count its records.
