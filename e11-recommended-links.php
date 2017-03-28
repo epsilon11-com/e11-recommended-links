@@ -39,6 +39,10 @@ if (!function_exists('add_action')) {
   exit;
 }
 
+// Register activation hook.
+
+register_activation_hook(__FILE__, array('e11RecommendedLinks', 'handle_activation'));
+
 // Add hooks to init() of plugin classes for user and admin.
 
 require_once(plugin_dir_path(__FILE__) . 'class.e11RecommendedLinks.php');

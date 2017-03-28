@@ -47,6 +47,16 @@ class e11RecommendedLinks {
   }
 
   /**
+   * Handle plugin activation, adding custom capability
+   * 'manage_e11_recommended_links' to the 'Administrator' role.
+   */
+  public static function handle_activation() {
+    $role = get_role('administrator');
+
+    $role->add_cap('manage_e11_recommended_links');
+  }
+
+  /**
    * Retrieve links within the date range of the current page of posts,
    * formatted for display within the content area of an index page.
    *

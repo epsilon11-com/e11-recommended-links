@@ -66,6 +66,21 @@ class RecommendedLinksListTable extends WP_List_Table {
   }
 
   /**
+   * Add bulk actions to the table.
+   *
+   * @return array Associative array of action labels keyed by action name
+   */
+  protected function get_bulk_actions() {
+    $actions = array();
+
+    if (current_user_can('manage_e11_recommended_links')) {
+      $actions['delete'] = __('Delete');
+    }
+
+    return $actions;
+  }
+
+  /**
    * Custom output for "cb" column (the checkbox at the left for row selection)
    *
    * @param object $item Link record

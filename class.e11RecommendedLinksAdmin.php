@@ -111,7 +111,7 @@ class e11RecommendedLinksAdmin {
 
     // Build settings page for plugin.
 
-    // Section: reCAPTCHA API Keys
+    // Section: Recommended Links
 
     add_settings_section(
       'e11_recommended_links_section_links',
@@ -119,8 +119,6 @@ class e11RecommendedLinksAdmin {
       array('e11RecommendedLinksAdmin', 'display_recommended_links_control'),
       'e11_recommended_links'
     );
-
-    //self::display_recommended_links_control();
 
 //    add_settings_field(
 //      'e11_recaptcha_field_site_key',
@@ -188,8 +186,6 @@ class e11RecommendedLinksAdmin {
     $linksTable->prepare_items();
 
     $linksTable->display();
-
-    //var_dump($links);
 ?>
 
 <?php
