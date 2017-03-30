@@ -404,7 +404,23 @@ class e11RecommendedLinksAdmin {
       'Add New',
       'manage_options',
       'e11_recommended_links_add',
-      array('e11RecommendedLinksAdmin', 'add_new_link_page_html')
+      array('e11RecommendedLinksAdmin', 'modify_link_page_html')
+    );
+
+    // Add "Edit Link" page under a menu that doesn't exist.  This way
+    // it won't be displayed in the admin sidebar while allowing link
+    // editing to be done from this class.
+    //
+    // Also calls the "modify_link_page_html" function like the
+    // "Add Link" page does, for code reuse.
+
+    add_submenu_page(
+      '__deliberately_nonexistent_menu_slug',
+      'Edit Link',
+      'Edit Link',
+      'manage_options',
+      'e11_recommended_links_edit',
+      array('e11RecommendedLinksAdmin', 'modify_link_page_html')
     );
   }
 
@@ -467,9 +483,10 @@ class e11RecommendedLinksAdmin {
   }
 
   /**
-   * Callback to build and display "add new link" page for plugin.
+   * Callback to build and display "add link" and "edit link" pages for
+   * plugin.
    */
-  public static function add_new_link_page_html() {
+  public static function modify_link_page_html() {
 
     // Block access unless user has adequate permissions.
     // [TODO] Make this capability 'manage_e11_recommended_links'?
@@ -478,20 +495,38 @@ class e11RecommendedLinksAdmin {
       return;
     }
 
-    // [TODO] If posting, test nonce.
+    // If calling this section with "edit link" functionality and not
+    // posting anything, load the link record from database using the
+    // supplied ID.
 
-    $allowPost = false;
+    if ($_GET['page'] == 'e11_recommended_links_edit') {
+      if (!isset($_GET['id'])) {
+        // [TODO] Display error and exit here.
+      }
+
+      // [TODO] Verify record with 'id' exists in database, exiting
+      //        here if not.
+
+      // Load record into form variables if not posting the form.
+
+      if (!isset($_POST['modify-link'])) {
+        // [TODO] Load record.
+      }
+    }
+
     $errors = array();
 
-    // Read and validate post variables if submitted.  Otherwise,
-    // initialize them.
+    // Read and validate post variables if submitted or loading from
+    // database.  Otherwise, initialize them.
 
-    if (isset($_POST['add-link'])) {
+    if (isset($_POST['modify-link']) ||
+                $_GET['page'] == 'e11_recommended_links_edit') {
 
       // Block the post if the nonce isn't verified.
 
-      if (!wp_verify_nonce($_POST['_wpnonce_e11-add-recommended-link'],
-                                      'e11-add-recommended-link')) {
+      if (isset($_POST['modify-link']) &&
+            !wp_verify_nonce($_POST['_wpnonce_e11-modify-recommended-link'],
+                                      'e11-modify-recommended-link')) {
         $errors[] = 'Invalid nonce';
       }
 
@@ -543,12 +578,17 @@ class e11RecommendedLinksAdmin {
         $link_created = date('Y-m-d H:i', current_time('timestamp'));
       }
 
-      // Save link if no errors found.  Otherwise, return to form and
-      // display error messages to user.
+      // Save link if posted and no errors found.  Otherwise, return to
+      // form and display error messages to user.
 
       if (empty($errors)) {
-        // Save link.
 
+        // Save link.  (If not loading from database for the "edit link"
+        // page.)
+
+        if (isset($_POST['modify-link'])) {
+          // [TODO] Save link.
+        }
       } else {
         // Return to form and display error messages.
 ?>
@@ -578,11 +618,18 @@ class e11RecommendedLinksAdmin {
     <div class="wrap">
       <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 
-      <form id="e11-add-recommended-link" class="validate" method="post"
-            name="e11-add-recommended-link" novalidate="novalidate">
+      <form id="e11-modify-recommended-link" class="validate" method="post"
+            name="e11-modify-recommended-link" novalidate="novalidate">
 
-        <?php wp_nonce_field('e11-add-recommended-link',
-                                '_wpnonce_e11-add-recommended-link'); ?>
+        <?php
+          wp_nonce_field('e11-modify-recommended-link',
+                                '_wpnonce_e11-modify-recommended-link');
+
+          if ($_GET['page'] == 'e11_recommended_links_edit') {
+            echo '<input type="hidden" name="link-id" value="'
+                                        . $_GET['id'] . '" />' . "\n";
+          }
+        ?>
 
         <table class="form-table">
           <tr class="form-field form-required">
@@ -655,7 +702,7 @@ class e11RecommendedLinksAdmin {
             </td>
           </tr>
         </table>
-        <?php submit_button(__('Add Link'), 'primary', 'add-link', true); ?>
+        <?php submit_button(__('Save Link'), 'primary', 'modify-link', true); ?>
       </form>
     </div>
 
