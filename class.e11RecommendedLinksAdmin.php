@@ -70,6 +70,8 @@ class e11RecommendedLinksAdmin {
 
     // Create recommended links table.
 
+    // [TODO] Rename "name" to title, here and throughout the plugin.
+
     $sql = 'CREATE TABLE ' . self::$linksTableName . ' (
 		    id integer NOT NULL AUTO_INCREMENT,
 		    created datetime DEFAULT "0000-00-00 00:00:00" NOT NULL,
@@ -176,19 +178,6 @@ class e11RecommendedLinksAdmin {
 //        'class' => 'e11-recaptcha-row'
 //      ]
 //    );
-  }
-
-
-  public static function display_recommended_links_control()
-  {
-    $linksTable = new RecommendedLinksListTable();
-
-    $linksTable->prepare_items();
-
-    $linksTable->display();
-?>
-
-<?php
   }
 
   /**
@@ -382,66 +371,296 @@ class e11RecommendedLinksAdmin {
 
   /**
    * Callback to add plugin options page under "Settings" in admin menu.
+   *
+   * [TODO] Use 'manage_e11_recommended_links' as the test for capability?
    */
   public static function admin_menu_options_page() {
-    add_submenu_page(
-      'options-general.php',
+
+    // Add menus to admin sidebar.  The first submenu is specified with the
+    // same menu slug as parent menu, which allows it to be given a different
+    // name (WordPress otherwise creates the first submenu with the same name
+    // as the parent.)
+
+    add_menu_page(
       'e11 Recommended Links',
       'e11 Recommended Links',
       'manage_options',
       'e11_recommended_links',
-      array('e11RecommendedLinksAdmin', 'options_page_html')
+      array('e11RecommendedLinksAdmin', 'all_links_page_html')
+    );
+
+    add_submenu_page(
+      'e11_recommended_links',
+      'Recommended Links',
+      'All Links',
+      'manage_options',
+      'e11_recommended_links',
+      array('e11RecommendedLinksAdmin', 'all_links_page_html')
+    );
+
+    add_submenu_page(
+      'e11_recommended_links',
+      'Add New Link',
+      'Add New',
+      'manage_options',
+      'e11_recommended_links_add',
+      array('e11RecommendedLinksAdmin', 'add_new_link_page_html')
     );
   }
 
   /**
-   * Callback to build and display options page for plugin.
+   * Callback to build and display "all links" page for plugin.
    */
-  public static function options_page_html() {
+  public static function all_links_page_html() {
 
     // Block access unless user has adequate permissions.
+    // [TODO] Make this capability 'manage_e11_recommended_links'?
 
     if (!current_user_can('manage_options')) {
       return;
     }
 
     // Display status messages to user.
+    // [TODO] Move this to a "config" page.
+    // settings_errors('e11_recommended_links_messages');
 
-    settings_errors('e11_recommended_links_messages');
-
-    // Output settings HTML.
+    // Output page HTML.
 
     echo '
       <div class="wrap">
         <h1>' . esc_html(get_admin_page_title());
 
     // [TODO] Set link to page to add recommended link
-    
+
     if (current_user_can('manage_e11_recommended_links')) {
       echo '
-        <a href="" class="page-title-action">'
+        <a href="' . admin_url('admin.php?page=e11_recommended_links_add') . '" class="page-title-action">'
           . esc_html_x('Add New', 'e11RecommendedLinks')
           . '</a>
       ';
     }
 
-    echo '</h1>        
-        <form action="options.php" method="post">
-    ';
+    echo '</h1>';
+
+    $linksTable = new RecommendedLinksListTable();
+
+    $linksTable->prepare_items();
+
+    $linksTable->display();
+
+
+    // [TODO] Move these to a "config" page.
 
     // Write WordPress hidden fields for form input.
-    settings_fields('e11_recommended_links');
+    // settings_fields('e11_recommended_links');
 
     // Write settings HTML for plugin.
-    do_settings_sections('e11_recommended_links');
+    // do_settings_sections('e11_recommended_links');
 
-    // Write submit button.
-    submit_button('Save changes');
+//    // Write submit button.
+//    submit_button('Save changes');
 
     echo '
         </form>
       </div>
     ';
+  }
+
+  /**
+   * Callback to build and display "add new link" page for plugin.
+   */
+  public static function add_new_link_page_html() {
+
+    // Block access unless user has adequate permissions.
+    // [TODO] Make this capability 'manage_e11_recommended_links'?
+
+    if (!current_user_can('manage_options')) {
+      return;
+    }
+
+    // [TODO] If posting, test nonce.
+
+    $allowPost = false;
+    $errors = array();
+
+    // Read and validate post variables if submitted.  Otherwise,
+    // initialize them.
+
+    if (isset($_POST['add-link'])) {
+
+      // Block the post if the nonce isn't verified.
+
+      if (!wp_verify_nonce($_POST['_wpnonce_e11-add-recommended-link'],
+                                      'e11-add-recommended-link')) {
+        $errors[] = 'Invalid nonce';
+      }
+
+      $link_title = trim(wp_unslash($_POST['link-title']));
+      $link_url = trim(wp_unslash($_POST['link-url']));
+      $link_description = trim(wp_unslash($_POST['link-description']));
+      $link_display_mode = wp_unslash($_POST['link-display-mode']);
+      $link_created = trim(wp_unslash($_POST['link-created']));
+
+      // Validate "Title" -- required field.
+
+      if (empty($link_title)) {
+        $errors[] = '"Title" cannot be empty';
+      }
+
+      // Validate "URL" -- required field and must be in valid form.
+
+      if (empty($link_url)) {
+        $errors[] = '"URL" cannot be empty';
+      }
+
+      $link_url = filter_var($link_url, FILTER_SANITIZE_URL);
+
+      if (filter_var($link_url, FILTER_VALIDATE_URL) === false) {
+        $errors[] = '"URL" is invalid';
+      }
+
+      // Validate "Display Mode" -- must contain 1, 2, or 3.
+
+      if (!preg_match('/^[123]$/', $link_display_mode)) {
+        $errors[] = '"Display Mode" is invalid';
+
+        $link_display_mode = 1;
+      }
+
+      // Validate "Created" -- if specified, must be in valid form.  If
+      // blank, fill with current date/time.
+
+      if (!empty($link_created)) {
+        $link_created_formatted = DateTime::createFromFormat('Y-m-d H:i', $link_created);
+
+        if ($link_created_formatted === false ||
+                $link_created_formatted->format('Y-m-d H:i')
+                                                        !== $link_created) {
+
+          $errors[] = '"Created" field is invalid';
+        }
+      } else {
+        $link_created = date('Y-m-d H:i', current_time('timestamp'));
+      }
+
+      // Save link if no errors found.  Otherwise, return to form and
+      // display error messages to user.
+
+      if (empty($errors)) {
+        // Save link.
+
+      } else {
+        // Return to form and display error messages.
+?>
+        <div class="error">
+          <ul>
+            <?php
+              foreach ($errors as $error) {
+                echo '<li>' . $error . '</li>' . "\n";
+              }
+            ?>
+          </ul>
+        </div>
+<?php
+      }
+    } else {
+      $link_title = '';
+      $link_url = '';
+      $link_description = '';
+      $link_display_mode = 1;
+      $link_created = date('Y-m-d H:i', current_time('timestamp'));
+    }
+
+
+    // Output page HTML.
+
+?>
+    <div class="wrap">
+      <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+
+      <form id="e11-add-recommended-link" class="validate" method="post"
+            name="e11-add-recommended-link" novalidate="novalidate">
+
+        <?php wp_nonce_field('e11-add-recommended-link',
+                                '_wpnonce_e11-add-recommended-link'); ?>
+
+        <table class="form-table">
+          <tr class="form-field form-required">
+            <th scope="row">
+              <label for="link-title"><?php _e('Title'); ?>
+                <span class="description"><?php _e('(required)'); ?></span>
+              </label>
+            </th>
+            <td>
+              <input name="link-title" type="text" id="link-title"
+                     value="<?php echo esc_attr($link_title); ?>"
+                     aria-required="true" autocapitalize="none"
+                     autocorrect="off" maxlength="512" />
+            </td>
+          </tr>
+          <tr class="form-field form-required">
+            <th scope="row">
+              <label for="link-url"><?php _e('URL'); ?>
+                <span class="description"><?php _e('(required)'); ?></span>
+              </label>
+            </th>
+            <td>
+              <input name="link-url" type="text" id="link-url"
+                     value="<?php echo esc_attr($link_url); ?>"
+                     aria-required="true" autocapitalize="none"
+                     autocorrect="off" maxlength="1024" />
+            </td>
+          </tr>
+          <tr class="form-field">
+            <th scope="row">
+              <label for="link-description"><?php _e('Description'); ?>
+              </label>
+            </th>
+            <td>
+              <textarea name="link-description" type="text"
+                        id="link-description"
+              ><?php echo esc_attr($link_description); ?></textarea>
+            </td>
+          </tr>
+          <tr class="form-field">
+            <th scope="row">
+              <label for="link-display-mode"><?php _e('Display Mode'); ?>
+              </label>
+            </th>
+            <td>
+              <select id="link-display-mode" name="link-display-mode">
+                <option value="1"
+                  <?php echo ($link_display_mode == 1 ? ' selected' : ''); ?>
+                  >Post index</option>
+                <option value="2"
+                  <?php echo ($link_display_mode == 2 ? ' selected' : ''); ?>
+                  >Sidebar widget</option>
+                <option value="3"
+                  <?php echo ($link_display_mode == 3 ? ' selected' : ''); ?>
+                  >Index and widget</option>
+              </select>
+            </td>
+          </tr>
+          <tr class="form-field form-required">
+            <th scope="row">
+              <label for="link-created"><?php _e('Created'); ?><br />
+                <span class="description"><?php _e('(YYYY-MM-DD hh:mm)'); ?></span>
+              </label>
+            </th>
+            <td>
+              <input name="link-created" type="text" id="link-created"
+                     value="<?php echo esc_attr($link_created); ?>"
+                     aria-required="true" autocapitalize="none"
+                     autocorrect="off" maxlength="16" />
+            </td>
+          </tr>
+        </table>
+        <?php submit_button(__('Add Link'), 'primary', 'add-link', true); ?>
+      </form>
+    </div>
+
+<?php
+
   }
 
 }
