@@ -13,6 +13,9 @@ the sidebar with a widget.
 
 == Description ==
 
+NOTE: This plugin is not yet finished.  Please don't actually try to use it
+yet.
+
 e11 Recommended Links seeks to provide an easy way to share links to things
 you feel might be of interest to your users.  It can be added with a shortcode
 to be displayed within an index of posts, where it will show links that were
