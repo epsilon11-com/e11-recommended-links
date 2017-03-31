@@ -1,0 +1,17 @@
+#e11-modify-recommended-link label,
+#e11-modify-recommended-link th,
+#e11-modify-recommended-link td
+{
+    vertical-align: top;
+}
+
+#e11-modify-recommended-link .form-field input,
+#e11-modify-recommended-link .form-field textarea
+{
+    width: 25em;
+}
+
+#e11-modify-recommended-link .form-field textarea
+{
+    height: 6.25em;
+}

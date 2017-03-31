@@ -487,6 +487,7 @@ class e11RecommendedLinksAdmin {
    * plugin.
    */
   public static function modify_link_page_html() {
+    global $wpdb;
 
     // Block access unless user has adequate permissions.
     // [TODO] Make this capability 'manage_e11_recommended_links'?
@@ -495,22 +496,54 @@ class e11RecommendedLinksAdmin {
       return;
     }
 
+    // Output page header HTML.
+?>
+      <div class="wrap">
+          <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+<?php
+
     // If calling this section with "edit link" functionality and not
     // posting anything, load the link record from database using the
     // supplied ID.
 
     if ($_GET['page'] == 'e11_recommended_links_edit') {
       if (!isset($_GET['id'])) {
-        // [TODO] Display error and exit here.
+        wp_die(__('"id" parameter required in URL but not found.'));
       }
 
       // [TODO] Verify record with 'id' exists in database, exiting
       //        here if not.
 
+      $query = $wpdb->prepare('
+          SELECT id, created, display_mode, name, url, description 
+          FROM wp_e11_recommended_links 
+          WHERE id = %d
+      ', array($_GET['id']));
+
+      $link = $wpdb->get_row($query);
+
+      if ($link === null) {
+        wp_die(__('Link record not found.'));
+      }
+
       // Load record into form variables if not posting the form.
 
       if (!isset($_POST['modify-link'])) {
-        // [TODO] Load record.
+        $link_title = $link->name;
+        $link_url = $link->url;
+        $link_description = $link->description;
+        $link_display_mode = $link->display_mode;
+
+        // Convert 'created' field to date/time string without seconds.
+
+        $link_created = DateTime::createFromFormat(
+                                'Y-m-d H:i:s', $link->created);
+
+        if ($link_created === false) {
+          $link_created = '';
+        } else {
+          $link_created = $link_created->format('Y-m-d H:i');
+        }
       }
     }
 
@@ -522,19 +555,23 @@ class e11RecommendedLinksAdmin {
     if (isset($_POST['modify-link']) ||
                 $_GET['page'] == 'e11_recommended_links_edit') {
 
-      // Block the post if the nonce isn't verified.
+      if (isset($_POST['modify-link'])) {
 
-      if (isset($_POST['modify-link']) &&
-            !wp_verify_nonce($_POST['_wpnonce_e11-modify-recommended-link'],
-                                      'e11-modify-recommended-link')) {
-        $errors[] = 'Invalid nonce';
+        // Block the post if the nonce isn't verified.
+
+        if (!wp_verify_nonce($_POST['_wpnonce_e11-modify-recommended-link'],
+          'e11-modify-recommended-link')) {
+          $errors[] = 'Invalid nonce';
+        }
+
+        // Read post variables.
+
+        $link_title = trim(wp_unslash($_POST['link-title']));
+        $link_url = trim(wp_unslash($_POST['link-url']));
+        $link_description = trim(wp_unslash($_POST['link-description']));
+        $link_display_mode = wp_unslash($_POST['link-display-mode']);
+        $link_created = trim(wp_unslash($_POST['link-created']));
       }
-
-      $link_title = trim(wp_unslash($_POST['link-title']));
-      $link_url = trim(wp_unslash($_POST['link-url']));
-      $link_description = trim(wp_unslash($_POST['link-description']));
-      $link_display_mode = wp_unslash($_POST['link-display-mode']);
-      $link_created = trim(wp_unslash($_POST['link-created']));
 
       // Validate "Title" -- required field.
 
@@ -612,12 +649,9 @@ class e11RecommendedLinksAdmin {
     }
 
 
-    // Output page HTML.
+    // Output remaining page HTML.
 
 ?>
-    <div class="wrap">
-      <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
-
       <form id="e11-modify-recommended-link" class="validate" method="post"
             name="e11-modify-recommended-link" novalidate="novalidate">
 

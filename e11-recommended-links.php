@@ -26,8 +26,8 @@ Plugin URI: https://epsilon11.com/e11-recommended-links
 Description: Display links to websites recommended by the admin.
 Version: 1.0
 Author: er11
-Author URI: https://epsilon11.com/wordpress-plugins/
-License: GPLv2
+Author URI: https://epsilon11.com/wordpress-plugins
+License: GPLv2 or later
 Text Domain: e11-recommended-links
 */
 
