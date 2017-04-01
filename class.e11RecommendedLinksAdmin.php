@@ -22,6 +22,7 @@ require_once 'class-recommended-links-list-table.php';
 class e11RecommendedLinksAdmin {
   private static $initialized = false;
   private static $linksTableName;
+  private static $actionErrors = array();
 
   /**
    * Plugin initialization.
@@ -73,14 +74,14 @@ class e11RecommendedLinksAdmin {
     // [TODO] Rename "name" to title, here and throughout the plugin.
 
     $sql = 'CREATE TABLE ' . self::$linksTableName . ' (
-		    id integer NOT NULL AUTO_INCREMENT,
-		    created datetime DEFAULT "0000-00-00 00:00:00" NOT NULL,
-		    display_mode tinyint NOT NULL DEFAULT 1,
-		    name varchar(512) NOT NULL,
-		    url varchar(1024) NOT NULL,
-		    description text NOT NULL DEFAULT "",
-		    
-		    PRIMARY KEY (id)
+            id integer NOT NULL AUTO_INCREMENT,
+            created datetime DEFAULT "0000-00-00 00:00:00" NOT NULL,
+            display_mode tinyint NOT NULL DEFAULT 1,
+            name varchar(512) NOT NULL,
+            url varchar(1024) NOT NULL,
+            description text NOT NULL DEFAULT "",
+            
+            PRIMARY KEY (id)
       );';
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -440,11 +441,19 @@ class e11RecommendedLinksAdmin {
    */
   public static function all_links_page_html() {
 
-    // Block access unless user has adequate permissions.
-    // [TODO] Make this capability 'manage_e11_recommended_links'?
+    // Intercept bulk actions and redirect them to a different function.
 
-    if (!current_user_can('manage_options')) {
-      return;
+    if (isset($_REQUEST['action'])) {
+      if ($_REQUEST['action'] == 'delete' || $_REQUEST['action'] == 'dodelete') {
+        self::delete_link_page_html();
+        return;
+      }
+    }
+
+    // Block access unless user has adequate permissions.
+
+    if (!current_user_can('manage_e11_recommended_links')) {
+      wp_die(__('Your account is not able to modify recommended links.'));
     }
 
     // Display status messages to user.
@@ -469,12 +478,54 @@ class e11RecommendedLinksAdmin {
 
     echo '</h1>';
 
+    // If returning from a bulk action, create a status message for the result
+    // using the GET parameters added to the redirect URL from the action.
+
+    $messages = array();
+
+    if (isset($_GET['update'])) {
+      switch ($_GET['update']) {
+        case 'del':
+          // Display number of links deleted.
+
+          $delete_count =
+            isset($_GET['delete_count']) ? (int)$_GET['delete_count'] : 0;
+
+          if (1 == $delete_count) {
+            $message = __('Link deleted.');
+          } else {
+            $message = _n('%s link deleted.', '%s links deleted.',
+                                                            $delete_count);
+          }
+
+          $messages[] = sprintf($message, number_format_i18n($delete_count));
+
+          break;
+      }
+    }
+
+    // Output status messages to HTML.
+
+    if (!empty($messages)) {
+      foreach ($messages as $message) {
+        echo '<div id="message" class="updated notice is-dismissible"><p>'
+                                                    . $message . '</p></div>';
+      }
+    }
+
+    // Output list table to HTML.  The page is added as a hidden input to
+    // cause the bulk action button to reload this page if clicked.
+
+    echo '<form method="get">';
+    echo '<input type="hidden" name="page" value="e11_recommended_links" />';
+
     $linksTable = new RecommendedLinksListTable();
 
     $linksTable->prepare_items();
 
     $linksTable->display();
 
+    echo '</form>';
 
     // [TODO] Move these to a "config" page.
 
@@ -501,10 +552,9 @@ class e11RecommendedLinksAdmin {
     global $wpdb;
 
     // Block access unless user has adequate permissions.
-    // [TODO] Make this capability 'manage_e11_recommended_links'?
 
-    if (!current_user_can('manage_options')) {
-      return;
+    if (!current_user_can('manage_e11_recommended_links')) {
+      wp_die(__('Your account is not able to modify recommended links.'));
     }
 
     // Output page header HTML.
@@ -846,25 +896,51 @@ class e11RecommendedLinksAdmin {
   {
     global $wpdb;
 
+    // Verify capability.
+
     if (!current_user_can('manage_e11_recommended_links')) {
       wp_die(__('Your account is not able to modify recommended links.'));
     }
 
-    if (empty($_REQUEST['ids'])) {
-      if (!isset($_REQUEST['id'])) {
-        wp_die(__('"id" parameter required but not found.'));
+    // Verify nonce.
+
+    check_admin_referer('bulk-e11-recommended-links');
+
+    // Read link id(s) from request into array $ids.
+
+    if (empty($_REQUEST['links'])) {
+      if (!isset($_REQUEST['link'])) {
+        wp_die(__('"link" parameter required but not found.'));
       }
 
-      $ids = array(intval($_REQUEST['id']));
+      $ids = array(intval($_REQUEST['link']));
     } else {
-      $ids = array_map('intval', (array)$_REQUEST['ids']);
+      $ids = array_map('intval', (array)$_REQUEST['links']);
     }
 
     // Output page header HTML.
     ?>
       <div class="wrap">
       <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+      <form method="get">
+      <input type="hidden" name="page" value="e11_recommended_links" />
     <?php
+
+    // Display error messages if present.
+
+    if (!empty(self::$actionErrors)) {
+?>
+      <div class="error">
+        <ul>
+          <?php
+            foreach (self::$actionErrors as $error) {
+              echo '<li>' . $error . '</li>' . "\n";
+            }
+          ?>
+        </ul>
+      </div>
+<?php
+    }
 
     // Build portion of query containing a set of placeholders equal to
     // the number of IDs being looked up.
@@ -883,6 +959,10 @@ class e11RecommendedLinksAdmin {
 
     // Output rest of HTML for page.
 
+    foreach ($links as $link) {
+      echo '<input type="hidden" name="links[]" value="' . $link->id . '" />';
+    }
+
     if (1 == count($ids)) {
       echo '<p>' . _e('You have specified this link for deletion:') . '</p>';
     } else {
@@ -897,11 +977,101 @@ class e11RecommendedLinksAdmin {
 
     echo '</ul>';
 
+    // [TODO] Different nonce field?
+    wp_nonce_field('bulk-e11-recommended-links');
+
+    if (isset($_REQUEST['wp_http_referer'])) {
+      $redirect = remove_query_arg(array('wp_http_referer', 'updated', 'delete_count'), wp_unslash($_REQUEST['wp_http_referer']));
+      $referer = '<input type="hidden" name="wp_http_referer" value="' . esc_attr($redirect) . '" />';
+    } else {
+      $referer = '';
+    }
+    echo $referer;
+
     echo '<input type="hidden" name="action" value="dodelete" />';
 
     submit_button(__('Confirm deletion'), 'primary');
+
+    echo '</form>';
   }
+
+  public static function delete_links_action() {
+    global $wpdb;
+
+    // Verify capability.
+
+    if (!current_user_can('manage_e11_recommended_links')) {
+      wp_die(__('Your account is not able to modify recommended links.'));
+    }
+
+    // Verify nonce.
+
+    check_admin_referer('bulk-e11-recommended-links');
+
+    // Read link id(s) from request into array $ids.
+
+    if (empty($_REQUEST['links'])) {
+      if (!isset($_REQUEST['link'])) {
+        wp_die(__('"link" parameter required but not found.'));
+      }
+
+      $ids = array(intval($_REQUEST['link']));
+    } else {
+      $ids = array_map('intval', (array)$_REQUEST['links']);
+    }
+
+    // Build portion of query containing a set of placeholders equal to
+    // the number of IDs being looked up.
+
+    $idSet = '(%d' . str_repeat(',%d', count($ids) - 1) . ')';
+
+    // Delete specified link records.
+
+    $query = $wpdb->prepare('
+        DELETE FROM ' . self::$linksTableName . '
+        WHERE id IN ' . $idSet,
+        $ids);
+
+    $result = $wpdb->query($query);
+
+    if ($result === false) {
+      // Trigger return to the "delete links" page, and display error to
+      // user.
+
+      self::$actionErrors[] = 'An error occurred while deleting link(s): '
+                      . $wpdb->last_error . '<br>Query: '
+                      . $wpdb->last_query;
+    } else {
+      // Trigger return to the recommended links table with a status message
+      // indicating success.
+
+      wp_redirect(admin_url(
+              'admin.php?page=e11_recommended_links&update=del&delete_count='
+              . $result));
+
+      exit;
+    }
+  }
+
+  /**
+   * Handle bulk actions that may require redirects.  Redirects can't be
+   * issued from inside an admin page, so this is called as an 'admin_init'
+   * action.
+   */
+  public static function process_bulk_action() {
+    if (isset($_GET['page']) && $_GET['page'] == 'e11_recommended_links') {
+      if (isset($_REQUEST['action'])) {
+        switch($_REQUEST['action']) {
+          case 'dodelete':
+            self::delete_links_action();
+            break;
+        }
+      }
+    }
+  }
+
 }
 
 add_action('admin_init', array('e11RecommendedLinksAdmin', 'settings_init'));
+add_action('admin_init', array('e11RecommendedLinksAdmin', 'process_bulk_action'));
 add_action('admin_menu', array('e11RecommendedLinksAdmin', 'admin_menu_options_page'));

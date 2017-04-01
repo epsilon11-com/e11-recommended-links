@@ -27,8 +27,8 @@ class RecommendedLinksListTable extends WP_List_Table {
    */
   public function __construct() {
     parent::__construct(array(
-      'plural' => 'links',
-      'singular' => 'link',
+      'singular' => 'e11-recommended-link',
+      'plural' => 'e11-recommended-links',
       'ajax' => false
     ));
   }
@@ -96,13 +96,13 @@ class RecommendedLinksListTable extends WP_List_Table {
     }
 
     if (current_user_can('manage_e11_recommended_links')) {
-      $nonce = wp_create_nonce('e11-delete-recommended-link');
+      $nonce = wp_create_nonce('bulk-e11-recommended-links');
 
       return '
         <div class="row-actions">
           <span class="trash">
             <a class="submitdelete" href="'
-              . admin_url('admin.php?page=e11_recommended_links_delete&id=' . $item->id . '&_wpnonce=' . $nonce)
+              . admin_url('admin.php?page=e11_recommended_links&action=delete&link=' . $item->id . '&_wpnonce=' . $nonce)
               . '">Delete</a>
           </span>
         </div>';
@@ -120,7 +120,7 @@ class RecommendedLinksListTable extends WP_List_Table {
    */
   public function column_cb($item) {
     return '<input id="cb-select-' . $item->id
-              . '" type="checkbox" name="link[]" value="' . $item->id . '" />';
+              . '" type="checkbox" name="links[]" value="' . $item->id . '" />';
   }
 
   /**
