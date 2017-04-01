@@ -422,6 +422,17 @@ class e11RecommendedLinksAdmin {
       'e11_recommended_links_edit',
       array('e11RecommendedLinksAdmin', 'modify_link_page_html')
     );
+
+    // Add "Delete Link" page under a menu that doesn't exist.
+
+    add_submenu_page(
+      '__deliberately_nonexistent_menu_slug',
+      'Delete Link',
+      'Delete Link',
+      'manage_options',
+      'e11_recommended_links_delete',
+      array('e11RecommendedLinksAdmin', 'delete_link_page_html')
+    );
   }
 
   /**
@@ -446,7 +457,7 @@ class e11RecommendedLinksAdmin {
       <div class="wrap">
         <h1>' . esc_html(get_admin_page_title());
 
-    // [TODO] Set link to page to add recommended link
+    // Create "Add New" button if user has capability to manage links.
 
     if (current_user_can('manage_e11_recommended_links')) {
       echo '
@@ -502,25 +513,38 @@ class e11RecommendedLinksAdmin {
           <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 <?php
 
+    // Set defaults for form variables.
+
+    $link_id = -1;
+    $link_title = '';
+    $link_url = '';
+    $link_description = '';
+    $link_display_mode = 1;
+    $link_created = date('Y-m-d H:i', current_time('timestamp'));
+
     // If calling this section with "edit link" functionality and not
     // posting anything, load the link record from database using the
     // supplied ID.
 
     if ($_GET['page'] == 'e11_recommended_links_edit') {
+
+      // Verify 'id' parameter is present.
+
       if (!isset($_GET['id'])) {
         wp_die(__('"id" parameter required in URL but not found.'));
       }
 
-      // [TODO] Verify record with 'id' exists in database, exiting
-      //        here if not.
+      // Read record from database.
 
       $query = $wpdb->prepare('
           SELECT id, created, display_mode, name, url, description 
-          FROM wp_e11_recommended_links 
+          FROM ' . self::$linksTableName . ' 
           WHERE id = %d
       ', array($_GET['id']));
 
       $link = $wpdb->get_row($query);
+
+      // Verify record exists for 'id'.
 
       if ($link === null) {
         wp_die(__('Link record not found.'));
@@ -529,6 +553,7 @@ class e11RecommendedLinksAdmin {
       // Load record into form variables if not posting the form.
 
       if (!isset($_POST['modify-link'])) {
+        $link_id = $link->id;
         $link_title = $link->name;
         $link_url = $link->url;
         $link_description = $link->description;
@@ -565,6 +590,10 @@ class e11RecommendedLinksAdmin {
         }
 
         // Read post variables.
+
+        if (isset($_POST['link-id'])) {
+          $link_id = wp_unslash($_POST['link-id']);
+        }
 
         $link_title = trim(wp_unslash($_POST['link-title']));
         $link_url = trim(wp_unslash($_POST['link-url']));
@@ -603,7 +632,8 @@ class e11RecommendedLinksAdmin {
       // blank, fill with current date/time.
 
       if (!empty($link_created)) {
-        $link_created_formatted = DateTime::createFromFormat('Y-m-d H:i', $link_created);
+        $link_created_formatted =
+                DateTime::createFromFormat('Y-m-d H:i', $link_created);
 
         if ($link_created_formatted === false ||
                 $link_created_formatted->format('Y-m-d H:i')
@@ -620,13 +650,71 @@ class e11RecommendedLinksAdmin {
 
       if (empty($errors)) {
 
-        // Save link.  (If not loading from database for the "edit link"
-        // page.)
+        // Save link, if posting.
 
         if (isset($_POST['modify-link'])) {
-          // [TODO] Save link.
+          if ($_GET['page'] == 'e11_recommended_links_add') {
+
+            // Insert new link if calling from "add" page.
+
+            $result = $wpdb->insert(self::$linksTableName, array(
+              'created' => $link_created . ':00',
+              'display_mode' => $link_display_mode,
+              'name' => $link_title,
+              'url' => $link_url,
+              'description' => $link_description
+            ));
+
+            if (1 != $result) {
+
+              // Save unsuccessful.  Bounce user back to form with error message.
+
+              $errors[] = 'An error occurred while saving the link: ' . $wpdb->last_error . '<br>Query: ' . $wpdb->last_query;
+            } else {
+
+              // Save successful.  Clear form and display success message.
+
+              $messages[] = 'Link "' . $link_title . '" saved successfully.';
+
+              $link_title = '';
+              $link_url = '';
+              $link_description = '';
+              $link_display_mode = 1;
+              $link_created = date('Y-m-d H:i', current_time('timestamp'));
+            }
+          } else {
+
+            // Update existing link if calling from "edit" page.
+
+            $result = $wpdb->update(self::$linksTableName, array(
+              'created' => $link_created . ':00',
+              'display_mode' => $link_display_mode,
+              'name' => $link_title,
+              'url' => $link_url,
+              'description' => $link_description
+            ), array('id' => $link_id));
+
+            if (1 != $result) {
+
+              // Save unsuccessful.  Bounce user back to form with error message.
+
+              $errors[] = 'An error occurred while saving the link: ' . $wpdb->last_error . '<br>Query: ' . $wpdb->last_query;
+            } else {
+
+              // Save successful.  Display success message.
+
+              $messages[] = 'Link "' . $link_title . '" updated successfully.';
+            }
+          }
         }
-      } else {
+      }
+
+      if (!empty($messages)) {
+        foreach ($messages as $message) {
+          echo '<div id="message" class="updated notice is-dismissible"><p>' . $message . '</p></div>';
+        }
+      }
+      if (!empty($errors)) {
         // Return to form and display error messages.
 ?>
         <div class="error">
@@ -640,14 +728,7 @@ class e11RecommendedLinksAdmin {
         </div>
 <?php
       }
-    } else {
-      $link_title = '';
-      $link_url = '';
-      $link_description = '';
-      $link_display_mode = 1;
-      $link_created = date('Y-m-d H:i', current_time('timestamp'));
     }
-
 
     // Output remaining page HTML.
 
@@ -736,7 +817,21 @@ class e11RecommendedLinksAdmin {
             </td>
           </tr>
         </table>
-        <?php submit_button(__('Save Link'), 'primary', 'modify-link', true); ?>
+        <?php
+          if ($_GET['page'] == 'e11_recommended_links_add') {
+        ?>
+            <input id="modify-link" class="button button-primary"
+                   name="modify-link" value="Save changes" type="submit" />
+        <?php
+          } else {
+        ?>
+            <input id="modify-link" class="button button-primary"
+                   name="modify-link" value="Save changes" type="submit" />
+        <?php
+          }
+        ?>
+        <a href="<?php echo admin_url('admin.php?page=e11_recommended_links'); ?>"
+           class="button button-cancel">Return to list</a>
       </form>
     </div>
 
@@ -744,6 +839,68 @@ class e11RecommendedLinksAdmin {
 
   }
 
+  /**
+   * Callback to build and display "delete link" page for plugin.
+   */
+  public static function delete_link_page_html()
+  {
+    global $wpdb;
+
+    if (!current_user_can('manage_e11_recommended_links')) {
+      wp_die(__('Your account is not able to modify recommended links.'));
+    }
+
+    if (empty($_REQUEST['ids'])) {
+      if (!isset($_REQUEST['id'])) {
+        wp_die(__('"id" parameter required but not found.'));
+      }
+
+      $ids = array(intval($_REQUEST['id']));
+    } else {
+      $ids = array_map('intval', (array)$_REQUEST['ids']);
+    }
+
+    // Output page header HTML.
+    ?>
+      <div class="wrap">
+      <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+    <?php
+
+    // Build portion of query containing a set of placeholders equal to
+    // the number of IDs being looked up.
+
+    $idSet = '(%d' . str_repeat(',%d', count($ids) - 1) . ')';
+
+    // Read records from database.
+
+    $query = $wpdb->prepare('
+          SELECT id, created, display_mode, name, url, description
+          FROM ' . self::$linksTableName . '
+          WHERE id IN ' . $idSet,
+      $ids);
+
+    $links = $wpdb->get_results($query);
+
+    // Output rest of HTML for page.
+
+    if (1 == count($ids)) {
+      echo '<p>' . _e('You have specified this link for deletion:') . '</p>';
+    } else {
+      echo '<p>' . _e('You have specified these links for deletion:') . '</p>';
+    }
+
+    echo '<ul>';
+
+    foreach ($links as $link) {
+      echo '<li>ID #' . $link->id . ': ' . $link->name . ' (' . $link->url . ')</li>';
+    }
+
+    echo '</ul>';
+
+    echo '<input type="hidden" name="action" value="dodelete" />';
+
+    submit_button(__('Confirm deletion'), 'primary');
+  }
 }
 
 add_action('admin_init', array('e11RecommendedLinksAdmin', 'settings_init'));

@@ -96,12 +96,16 @@ class RecommendedLinksListTable extends WP_List_Table {
     }
 
     if (current_user_can('manage_e11_recommended_links')) {
+      $nonce = wp_create_nonce('e11-delete-recommended-link');
+
       return '
-            <div class="row-actions">
-                <span class="trash">
-                    <a class="submitdelete" href="">Delete</a>
-                </span>
-            </div>';
+        <div class="row-actions">
+          <span class="trash">
+            <a class="submitdelete" href="'
+              . admin_url('admin.php?page=e11_recommended_links_delete&id=' . $item->id . '&_wpnonce=' . $nonce)
+              . '">Delete</a>
+          </span>
+        </div>';
     } else {
       return '';
     }
@@ -123,14 +127,12 @@ class RecommendedLinksListTable extends WP_List_Table {
    * Custom output for "name" column, creating link to page to edit item if
    * the user has the capability.
    *
-   * [TODO] Generate the correct link for the edit page
-   *
    * @param object $item Link record
    * @return string HTML output for field
    */
   public function column_name($item) {
     if (current_user_can('manage_e11_recommended_links')) {
-      return '<a class="row-title" href="/edit/link/' . $item->id . '">' . $item->name . '</a>';
+      return '<a class="row-title" href="' . admin_url('admin.php?page=e11_recommended_links_edit&id=') . $item->id . '">' . $item->name . '</a>';
     } else {
       return $item->name;
     }
