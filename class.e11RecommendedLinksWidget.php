@@ -57,7 +57,7 @@ class e11RecommendedLinksWidget extends \WP_Widget {
     $limit = 3;
 
     $links = $wpdb->get_results($wpdb->prepare('
-      SELECT name, url, description 
+      SELECT title, url, description 
       FROM ' . $linksTableName . '
       WHERE display_mode = 2 OR display_mode = 3
       ORDER BY RAND()
@@ -67,7 +67,7 @@ class e11RecommendedLinksWidget extends \WP_Widget {
     foreach ($links as $link) {
 ?>
       <div class="link">
-        <a class="link-title" href="<?php echo esc_url($link->url); ?>"><?php echo $link->name; ?></a>
+        <a class="link-title" href="<?php echo esc_url($link->url); ?>"><?php echo $link->title; ?></a>
         <div class="link-description"><?php echo $link->description; ?></div>
       </div>
 <?php

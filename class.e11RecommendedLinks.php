@@ -155,7 +155,7 @@ class e11RecommendedLinks {
     // Retrieve links from database.
 
     $links = $wpdb->get_results('
-      SELECT created, name, url, description 
+      SELECT created, title, url, description 
       FROM ' . self::$linksTableName
       . $where . '
       ORDER BY created DESC
@@ -182,7 +182,7 @@ class e11RecommendedLinks {
       <div class="link">
         <div class="link-date"><?php echo $created; ?></div>
         <div class="link-label">
-          <div class="link-title"><a href="<?php echo esc_url($link->url); ?>"><?php echo $link->name; ?></a></div>
+          <div class="link-title"><a href="<?php echo esc_url($link->url); ?>"><?php echo $link->title; ?></a></div>
           <div class="link-description"><?php echo $link->description; ?></div>
         </div>
       </div>

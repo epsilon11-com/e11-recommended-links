@@ -42,7 +42,7 @@ class RecommendedLinksListTable extends WP_List_Table {
   public function get_columns() {
     return array(
       'cb' => '<input type="checkbox" />',
-      'name' => 'Name',
+      'title' => 'Title',
       'url' => 'URL',
       'description' => 'Description',
       'display_mode' => 'Display mode',
@@ -59,7 +59,7 @@ class RecommendedLinksListTable extends WP_List_Table {
    */
   protected function get_sortable_columns() {
     return array(
-      'name' => 'name',
+      'title' => 'title',
       'url' => 'url',
       'created' => array('created', true)
     );
@@ -82,7 +82,7 @@ class RecommendedLinksListTable extends WP_List_Table {
 
   /**
    * Add actions to the row of each item under the primary field
-   * (specified as 'name' elsewhere).  Do not display if the user does
+   * (specified as 'title' elsewhere).  Do not display if the user does
    * not have the capability to modify an item.
    *
    * @param object $item Link record
@@ -124,17 +124,17 @@ class RecommendedLinksListTable extends WP_List_Table {
   }
 
   /**
-   * Custom output for "name" column, creating link to page to edit item if
+   * Custom output for "title" column, creating link to page to edit item if
    * the user has the capability.
    *
    * @param object $item Link record
    * @return string HTML output for field
    */
-  public function column_name($item) {
+  public function column_title($item) {
     if (current_user_can('manage_e11_recommended_links')) {
-      return '<a class="row-title" href="' . admin_url('admin.php?page=e11_recommended_links_edit&id=') . $item->id . '">' . $item->name . '</a>';
+      return '<a class="row-title" href="' . admin_url('admin.php?page=e11_recommended_links_edit&id=') . $item->id . '">' . $item->title . '</a>';
     } else {
-      return $item->name;
+      return $item->title;
     }
   }
 
@@ -191,7 +191,7 @@ class RecommendedLinksListTable extends WP_List_Table {
       $this->get_columns(),
       array(),
       $this->get_sortable_columns(),
-      'name'
+      'title'
     );
 
     // Set name of recommended links table and count its records.
@@ -237,7 +237,7 @@ class RecommendedLinksListTable extends WP_List_Table {
     // the object with the results.
 
     $links = $wpdb->get_results('
-      SELECT id, name, created, url, description, display_mode 
+      SELECT id, title, created, url, description, display_mode 
       FROM ' . $links_table . '
       ORDER BY ' . $order_by . ' ' . $order . '
       LIMIT ' . $limit . ' OFFSET ' . $offset);

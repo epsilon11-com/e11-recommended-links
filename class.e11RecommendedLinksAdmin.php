@@ -71,13 +71,11 @@ class e11RecommendedLinksAdmin {
 
     // Create recommended links table.
 
-    // [TODO] Rename "name" to title, here and throughout the plugin.
-
     $sql = 'CREATE TABLE ' . self::$linksTableName . ' (
             id integer NOT NULL AUTO_INCREMENT,
             created datetime DEFAULT "0000-00-00 00:00:00" NOT NULL,
             display_mode tinyint NOT NULL DEFAULT 1,
-            name varchar(512) NOT NULL,
+            title varchar(512) NOT NULL,
             url varchar(1024) NOT NULL,
             description text NOT NULL DEFAULT "",
             
@@ -587,7 +585,7 @@ class e11RecommendedLinksAdmin {
       // Read record from database.
 
       $query = $wpdb->prepare('
-          SELECT id, created, display_mode, name, url, description 
+          SELECT id, created, display_mode, title, url, description 
           FROM ' . self::$linksTableName . ' 
           WHERE id = %d
       ', array($_GET['id']));
@@ -604,7 +602,7 @@ class e11RecommendedLinksAdmin {
 
       if (!isset($_POST['modify-link'])) {
         $link_id = $link->id;
-        $link_title = $link->name;
+        $link_title = $link->title;
         $link_url = $link->url;
         $link_description = $link->description;
         $link_display_mode = $link->display_mode;
@@ -710,7 +708,7 @@ class e11RecommendedLinksAdmin {
             $result = $wpdb->insert(self::$linksTableName, array(
               'created' => $link_created . ':00',
               'display_mode' => $link_display_mode,
-              'name' => $link_title,
+              'title' => $link_title,
               'url' => $link_url,
               'description' => $link_description
             ));
@@ -739,7 +737,7 @@ class e11RecommendedLinksAdmin {
             $result = $wpdb->update(self::$linksTableName, array(
               'created' => $link_created . ':00',
               'display_mode' => $link_display_mode,
-              'name' => $link_title,
+              'title' => $link_title,
               'url' => $link_url,
               'description' => $link_description
             ), array('id' => $link_id));
@@ -950,7 +948,7 @@ class e11RecommendedLinksAdmin {
     // Read records from database.
 
     $query = $wpdb->prepare('
-          SELECT id, created, display_mode, name, url, description
+          SELECT id, created, display_mode, title, url, description
           FROM ' . self::$linksTableName . '
           WHERE id IN ' . $idSet,
       $ids);
@@ -972,7 +970,7 @@ class e11RecommendedLinksAdmin {
     echo '<ul>';
 
     foreach ($links as $link) {
-      echo '<li>ID #' . $link->id . ': ' . $link->name . ' (' . $link->url . ')</li>';
+      echo '<li>ID #' . $link->id . ': ' . $link->title . ' (' . $link->url . ')</li>';
     }
 
     echo '</ul>';
