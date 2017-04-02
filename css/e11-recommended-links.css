@@ -1,10 +1,10 @@
-.e11-recommended-links {
+div.e11-recommended-links {
     background-color: #e8e8e8;
 
     margin-bottom: 1em;
 }
 
-.e11-recommended-links .title {
+div.e11-recommended-links .title {
     font-size: 1.3em;
     font-weight: bold;
     border-bottom: 1px dotted #888;
@@ -12,7 +12,7 @@
     padding-top: 10px;
 }
 
-.e11-recommended-links .link {
+div.e11-recommended-links .link {
     padding: 0.75em 0;
 
     position: relative;
@@ -20,7 +20,7 @@
     font-size: 90%;
 }
 
-.e11-recommended-links .link .link-date {
+div.e11-recommended-links .link .link-date {
     position: absolute;
     top: 0.75em;
     left: 0.75em;
@@ -31,17 +31,17 @@
 /*    text-align: right;*/
 }
 
-.e11-recommended-links .link .link-label {
+div.e11-recommended-links .link .link-label {
     display: inline-block;
     margin-left: 5em;
     margin-right: 0.5em;
 }
 
-.e11-recommended-links .link .link-label .link-title {
+div.e11-recommended-links .link .link-label .link-title {
     font-weight: bold;
 }
 
-.e11-recommended-links .link .link-label .link-description {
+div.e11-recommended-links .link .link-label .link-description {
 }
 
 .e11-recommended-links-widget .link {
