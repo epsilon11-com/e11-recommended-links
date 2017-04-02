@@ -73,6 +73,9 @@ class e11RecommendedLinks {
    * check and ignore sticky post dates, searching from the beginning
    * of the $wp_query->posts array until the first non-sticky post is
    * found.
+   *
+   * [TODO] Ensure the timezones of recommended links match WordPress
+   *        config / timezones of posts.
    */
   public static function display_links() {
     global $wp_query;
@@ -167,13 +170,21 @@ class e11RecommendedLinks {
     // Output links.
 
     echo '<div class="e11-recommended-links">';
+    echo '<div class="title">' . __('Recommended links') . '</div>';
 
     foreach ($links as $link) {
+      // [TODO] Converting "created" field into a friendlier date format,
+      //        but this should be user-customizable once the config page
+      //        is written.
+
+      $created = DateTime::createFromFormat('Y-m-d H:i:s', $link->created)->format('M. d');
 ?>
       <div class="link">
-        <div class="date"><?php echo $link->created; ?></div>
-        <div class="title"><?php echo $link->name; ?></div>
-        <div class="description"><?php echo $link->description; ?></div>
+        <div class="link-date"><?php echo $created; ?></div>
+        <div class="link-label">
+          <div class="link-title"><a href="<?php echo esc_url($link->url); ?>"><?php echo $link->name; ?></a></div>
+          <div class="link-description"><?php echo $link->description; ?></div>
+        </div>
       </div>
 <?php
     }
