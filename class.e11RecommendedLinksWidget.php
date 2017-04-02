@@ -41,26 +41,25 @@ class e11RecommendedLinksWidget extends \WP_Widget {
 
     $linksTableName = $wpdb->prefix . 'e11_recommended_links';
 
-    // Display widget title
+    // Load widget variables.
 
-    if (empty($instance['title'])) {
-        $title = __('Recommended links', 'e11-recommended-links');
+    if (!empty($instance['title'])) {
+      $title = $instance['title'];
     } else {
-        $title = $instance['title'];
+      $title = __('Recommended links', 'e11-recommended-links');
     }
 
     $title = apply_filters('widget_title', $title);
 
-    echo $args['before_widget'];
-
-    if (!empty($title)) {
-      echo $args['before_title'] . $title . $args['after_title'];
+    if (!empty($instance['num_links'])) {
+      $num_links = $instance['num_links'];
+    } else {
+      $num_links = '3';
     }
 
-    // [TODO] Set the number of results on the config page
-    // when it's developed.
+    // Select up to $num_links links.  These are randomly chosen each time.
 
-    $limit = 3;
+    $limit = intval($num_links);
 
     $links = $wpdb->get_results($wpdb->prepare('
       SELECT title, url, description 
@@ -69,6 +68,14 @@ class e11RecommendedLinksWidget extends \WP_Widget {
       ORDER BY RAND()
       LIMIT %d
     ', $limit));
+
+    // Output widget HTML.
+
+    echo $args['before_widget'];
+
+    if (!empty($title)) {
+      echo $args['before_title'] . $title . $args['after_title'];
+    }
 
     foreach ($links as $link) {
 ?>
@@ -94,10 +101,16 @@ class e11RecommendedLinksWidget extends \WP_Widget {
    * @return string ?
    */
   public function form($instance) {
-    if (empty($instance['title'])) {
-      $title = __('Recommended links', 'e11-recommended-links');
-    } else {
+    if (!empty($instance['title'])) {
       $title = $instance['title'];
+    } else {
+      $title = __('Recommended links', 'e11-recommended-links');
+    }
+
+    if (!empty($instance['num_links'])) {
+      $num_links = $instance['num_links'];
+    } else {
+      $num_links = '3';
     }
 
 ?>
@@ -109,6 +122,12 @@ class e11RecommendedLinksWidget extends \WP_Widget {
              id="<?php echo esc_attr($this->get_field_id('title')); ?>"
              name="<?php echo esc_attr($this->get_field_name('title')); ?>"
              type="text" value="<?php echo esc_attr($title); ?>" />
+      <label for="<?php echo esc_attr($this->get_field_id('num_links')); ?>">
+        <?php esc_attr_e('Number to display:', 'e11-recommended-links'); ?>
+      </label>
+      <input id="<?php echo esc_attr($this->get_field_id('num_links')); ?>"
+             name="<?php echo esc_attr($this->get_field_name('num_links')); ?>"
+             type="text" value="<?php echo esc_attr($num_links); ?>" />
     </p>
 <?php
   }
@@ -121,7 +140,7 @@ class e11RecommendedLinksWidget extends \WP_Widget {
    * @param string $default_value Value to return if $value not set
    * @return string Sanitized $value or $default_value
    */
-  private function set_with_default($value, $default_value)
+  private function _set_with_default($value, $default_value)
   {
     if (empty($value)) {
       return $default_value;
@@ -141,11 +160,17 @@ class e11RecommendedLinksWidget extends \WP_Widget {
   {
     $instance = array();
 
-    $instance['title'] = $this->set_with_default($new_instance['title'], '');
+    $instance['title'] =
+      $this->_set_with_default($new_instance['title'], '');
+    
+    $instance['num_links'] =
+      $this->_set_with_default($new_instance['num_links'], '3');
 
     return $instance;
   }
 }
+
+// Add widget to WordPress.
 
 add_action('widgets_init', function() {
   register_widget('e11RecommendedLinksWidget');
