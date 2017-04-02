@@ -54,3 +54,5 @@ if (is_admin()) {
 
   add_action('init', array('e11RecommendedLinksAdmin', 'init'));
 }
+
+require_once(plugin_dir_path(__FILE__) . 'class.e11RecommendedLinksWidget.php');

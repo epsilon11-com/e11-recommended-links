@@ -43,3 +43,7 @@
 
 .e11-recommended-links .link .link-label .link-description {
 }
+
+.e11-recommended-links-widget .link {
+    padding: 5px 0;
+}
