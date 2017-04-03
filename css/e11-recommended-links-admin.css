@@ -15,3 +15,9 @@
 {
     height: 6.25em;
 }
+
+.e11-recommended-link-row input[type="text"],
+.e11-recommended-link-row select
+{
+    min-width: 28em;
+}

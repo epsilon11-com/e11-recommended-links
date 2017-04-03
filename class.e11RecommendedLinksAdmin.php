@@ -116,121 +116,74 @@ class e11RecommendedLinksAdmin {
 
     add_settings_section(
       'e11_recommended_links_section_links',
-      __('Recommended Links', 'e11_recommended_links'),
-      array('e11RecommendedLinksAdmin', 'display_recommended_links_control'),
-      'e11_recommended_links'
+      __('Recommended Links', 'e11-recommended-links'),
+      function() {},
+      'e11_recommended_links_settings'
     );
 
-//    add_settings_field(
-//      'e11_recaptcha_field_site_key',
-//      __('Site key', 'e11Recaptcha'),
-//      array('e11RecaptchaAdmin', 'field_site_key_cb'),
-//      'e11_recaptcha',
-//      'e11_recaptcha_section_api',
-//      [
-//        'label_for' => 'e11_recaptcha_field_site_key',
-//        'class' => 'e11-recaptcha-row'
-//      ]
-//    );
-//
-//    add_settings_field(
-//      'e11_recaptcha_field_secret_key',
-//      __('Secret key', 'e11Recaptcha'),
-//      array('e11RecaptchaAdmin', 'field_secret_key_cb'),
-//      'e11_recaptcha',
-//      'e11_recaptcha_section_api',
-//      [
-//        'label_for' => 'e11_recaptcha_field_secret_key',
-//        'class' => 'e11-recaptcha-row'
-//      ]
-//    );
-//
-//    // Section: Behavior
-//
-//    add_settings_section(
-//      'e11_recaptcha_section_behavior',
-//      __('Behavior', 'e11Recaptcha'),
-//      array('e11RecaptchaAdmin', 'section_behavior_cb'),
-//      'e11_recaptcha'
-//    );
-//
-//    add_settings_field(
-//      'e11_recaptcha_field_behavior_comments',
-//      __('Comments', 'e11Recaptcha'),
-//      array('e11RecaptchaAdmin', 'field_behavior_comments_cb'),
-//      'e11_recaptcha',
-//      'e11_recaptcha_section_behavior',
-//      [
-//        'label_for' => 'e11_recaptcha_field_behavior_comments',
-//        'class' => 'e11-recaptcha-row'
-//      ]
-//    );
-//
-//    add_settings_field(
-//      'e11_recaptcha_field_behavior_new_users',
-//      __('New users', 'e11Recaptcha'),
-//      array('e11RecaptchaAdmin', 'field_behavior_new_users_cb'),
-//      'e11_recaptcha',
-//      'e11_recaptcha_section_behavior',
-//      [
-//        'label_for' => 'e11_recaptcha_field_behavior_new_users',
-//        'class' => 'e11-recaptcha-row'
-//      ]
-//    );
+    add_settings_field(
+      'e11_recommended_links_label',
+      __('Label', 'e11-recommended-links'),
+      array('e11RecommendedLinksAdmin', 'field_text_cb'),
+      'e11_recommended_links_settings',
+      'e11_recommended_links_section_links',
+      [
+        'field' => 'e11_recommended_links_field_label',
+        'class' => 'e11-recommended-link-row',
+        'description' => esc_html_x('Label for post index recommended links box',
+                                              'e11-recommended-links'),
+        'default' => 'Recommended links'
+      ]
+    );
+
+    add_settings_field(
+      'e11_recommended_links_date_format',
+      __('Date format', 'e11-recommended-links'),
+      array('e11RecommendedLinksAdmin', 'field_text_cb'),
+      'e11_recommended_links_settings',
+      'e11_recommended_links_section_links',
+      [
+        'field' => 'e11_recommended_links_field_date_format',
+        'class' => 'e11-recommended-link-row',
+        'description' => __('Date format for post index 
+                                        recommended links box<br />(in 
+                                        <a href="http://php.net/manual/en/function.date.php">PHP date() format</a>)
+                                        ', 'e11-recommended-links'),
+        'default' => 'M. d'
+      ]
+    );
   }
 
   /**
-   * Callback to build and display HTML for "Links" section.
-   *
-   * @static
-   * @param array $args Associative array of field arguments
-   */
-  public static function section_links_cb() {
-//    echo __(
-//      '<p>Text.</p>
-//      ', 'e11_recommended_links');
-  }
-
-  /**
-   * Callback to build and display HTML for "Behavior" section.
+   * Callback to build and display HTML for text input.
    *
    * @param array $args Associative array of field arguments
    */
-  public static function section_behavior_cb() {
-    echo __(
-      '<p>The following settings determine when users will be required to
-          solve reCAPTCHAs.</p>
-      ', 'e11Recaptcha');
-  }
+  public static function field_text_cb($args) {
+    $options = get_option('e11_recommended_links_options', array());
 
-  /**
-   * Callback to build and display HTML for API site key text input.
-   *
-   * @param array $args Associative array of field arguments
-   */
-  public static function field_site_key_cb($args) {
-    $options = get_option('e11_recaptcha_options', array());
+    $value = $args['default'];
 
-    $siteKey = '';
-
-    if (isset($options[$args['label_for']])) {
-      $siteKey = $options[$args['label_for']];
+    if (isset($options[$args['field']])) {
+      $value = $options[$args['field']];
     }
 
     echo '
       <input id="'
-      . esc_attr($args['label_for'])
-      . '" type="text" name="e11_recaptcha_options['
-      . esc_attr($args['label_for'])
+      . esc_attr($args['field'])
+      . '" type="text" name="e11_recommended_links_options['
+      . esc_attr($args['field'])
       . ']" value="'
-      . esc_attr($siteKey)
+      . esc_attr($value)
       . '" />
       <p class="description">'
-      . esc_html_x('Site key as provided by Google for your reCAPTCHA account', 'e11Recaptcha')
+      . $args['description']
       . '</p>
     ';
   }
-
+/////////////////////////////////////
+/////////////////////////////////////
+/////////////////////////////////////
   /**
    * Callback to build and display HTML for API secret key text input.
    *
@@ -368,6 +321,40 @@ class e11RecommendedLinksAdmin {
   }
 
 
+  public static function settings_page_html() {
+    // Block access unless user has adequate permissions.
+
+    if (!current_user_can('manage_options')) {
+      return;
+    }
+
+    // Display status messages to user.
+
+    settings_errors('e11_recommended_links_messages');
+
+    // Output settings HTML.
+
+    echo '
+      <div class="wrap">
+        <h1>' . esc_html(get_admin_page_title()) . '</h1>
+        <form action="options.php" method="post">
+    ';
+
+    // Write WordPress hidden fields for form input.
+    settings_fields('e11_recommended_links');
+
+    // Write settings HTML for plugin.
+    do_settings_sections('e11_recommended_links_settings');
+
+    // Write submit button.
+    submit_button('Save changes');
+
+    echo '
+        </form>
+      </div>
+    ';
+  }
+
   /**
    * Callback to add plugin options page under "Settings" in admin menu.
    *
@@ -404,6 +391,15 @@ class e11RecommendedLinksAdmin {
       'manage_options',
       'e11_recommended_links_add',
       array('e11RecommendedLinksAdmin', 'modify_link_page_html')
+    );
+
+    add_submenu_page(
+      'e11_recommended_links',
+      'Settings',
+      'Settings',
+      'manage_options',
+      'e11_recommended_links_settings',
+      array('e11RecommendedLinksAdmin', 'settings_page_html')
     );
 
     // Add "Edit Link" page under a menu that doesn't exist.  This way

@@ -87,6 +87,21 @@ class e11RecommendedLinks {
       return;
     }
 
+    // Read options from WordPress settings, setting defaults if not found.
+
+    $label = __('Recommended links', 'e11-recommended-links');
+    $date_format = 'M. d';
+
+    $options = get_option('e11_recommended_links_options', array());
+
+    if (isset($options['e11_recommended_links_field_label'])) {
+      $label = $options['e11_recommended_links_field_label'];
+    }
+
+    if (isset($options['e11_recommended_links_field_date_format'])) {
+      $date_format = $options['e11_recommended_links_field_date_format'];
+    }
+
     // Get current page and number of pages.
 
     $cur_page = (get_query_var('paged')) ? get_query_var('paged') : 1;
@@ -170,14 +185,14 @@ class e11RecommendedLinks {
     // Output links.
 
     echo '<div class="e11-recommended-links">';
-    echo '<div class="title">' . __('Recommended links') . '</div>';
+    echo '<div class="title">' . $label . '</div>';
 
     foreach ($links as $link) {
       // [TODO] Converting "created" field into a friendlier date format,
       //        but this should be user-customizable once the config page
       //        is written.
 
-      $created = DateTime::createFromFormat('Y-m-d H:i:s', $link->created)->format('M. d');
+      $created = DateTime::createFromFormat('Y-m-d H:i:s', $link->created)->format($date_format);
 ?>
       <div class="link">
         <div class="link-date"><?php echo $created; ?></div>
