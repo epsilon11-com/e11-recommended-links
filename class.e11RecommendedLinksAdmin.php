@@ -837,13 +837,13 @@ class e11RecommendedLinksAdmin {
               <select id="link-display-mode" name="link-display-mode">
                 <option value="1"
                   <?php echo ($link_display_mode == 1 ? ' selected' : ''); ?>
-                  >Post index</option>
+                  >Posts list</option>
                 <option value="2"
                   <?php echo ($link_display_mode == 2 ? ' selected' : ''); ?>
-                  >Sidebar widget</option>
+                  >Widget</option>
                 <option value="3"
                   <?php echo ($link_display_mode == 3 ? ' selected' : ''); ?>
-                  >Index and widget</option>
+                  >Posts and widget</option>
               </select>
             </td>
           </tr>

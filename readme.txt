@@ -7,46 +7,53 @@ Stable tag: 1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Show a admin-recommended links and descriptions on the page with a shortcode or
-the sidebar with a widget.
-
+Show admin-recommended links and descriptions within a page of post summaries
+and/or a widget.
 
 == Description ==
 
-NOTE: This plugin is not yet finished.  Please don't actually try to use it
-yet.
-
 e11 Recommended Links seeks to provide an easy way to share links to things
-you feel might be of interest to your users.  It can be added with a shortcode
-to be displayed within an index of posts, where it will show links that were
-added around the same time as the posts, or as a sidebar widget, where it will
-display links at random.  Both features may be enabled at the same time, and
-links can be configured individually to show up in one or both of the areas.
+you feel might be of interest to your users.
+
+This plugin divides links into two categories: those that are displayed in
+a widget, and those that are displayed within webpages with lists of posts
+(generally the main page of the website.)
+
+The widget will display a list of links at random, and, like the blogroll,
+is meant to feature sites with lasting relevance.
+
+The function for webpages with lists of posts will create a div displaying a
+list of links that were added to the site around the same date range as
+the posts on the webpage.  This is meant for links like news articles where
+their relevance is tied in part to the date they're posted.
+
+It's also possible to put a link in both categories so it gets highlighted
+in the main area of the site when it's posted but will also occasionally
+appear in the widget from that point forward.
 
 
 == Installation ==
 
-[TODO] Finish.
-
-This section describes how to install the plugin and get it working.
-
-e.g.
-
-1. Upload the plugin files to the `/wp-content/plugins/plugin-name` directory, or install the plugin through the WordPress plugins screen directly.
-2. Activate the plugin through the 'Plugins' screen in WordPress
-3. Use the Settings->Plugin Name screen to configure the plugin
-4. (Make your instructions match the desired user flow for activating and installing your plugin. Include any steps that might be needed for explanatory purposes)
+1. Upload the plugin files to the '/wp-content/plugins/e11-recommended-links'
+   directory, or install the plugin through the WordPress plugins
+   screen directly.
+2. Activate the plugin through the 'Plugins' screen in WordPress.
+3. Add the "e11 Recommended Links" widget to your template using
+   "Appearance / Customize / Widgets" from the admin sidebar.  The widget will
+   display a list of randomly chosen links on each page load.
+4. Add a call to "e11RecommendedLinks::display_links()" within the template
+   code that outputs a list of posts.  This will create a div displaying a
+   list of links that were added to the site around the same date range as
+   the posts on the page.
+5. Use "e11 Recommended Links / Add New" from the admin sidebar to begin adding
+   links.  "Display mode" controls whether a link is displayed in the
+   widget, the list of posts, or both.
 
 
 == Screenshots ==
 
-[TODO] Finish.
-
-1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
-the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets
-directory take precedence. For example, `/assets/screenshot-1.png` would win over `/tags/4.3/screenshot-1.png`
-(or jpg, jpeg, gif).
-2. This is the second screen shot
+1. Widget "Recommended links" display a random set of links
+2. Posts area "Recommended links" display links by date
 
 
 == Changelog ==
@@ -58,4 +65,4 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 == Other notes ==
 
 Comments and feature requests are welcomed here or on
-[the project page on my site.](https://epsilon11.com/projects/e11-recommended-links)
+[the project page on my site.](https://epsilon11.com/e11-recommended-links)

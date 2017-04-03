@@ -148,13 +148,13 @@ class RecommendedLinksListTable extends WP_List_Table {
   public function column_display_mode($item) {
     switch($item->display_mode) {
       case 1:
-        return 'Post index';
+        return 'Posts list';
 
       case 2:
-        return 'Sidebar widget';
+        return 'Widget';
 
       case 3:
-        return 'Index and widget';
+        return 'Posts and widget';
     }
 
     return '(invalid)';
