@@ -32,4 +32,4 @@ delete_option('e11_recommended_links_version');
 global $wpdb;
 
 $wpdb->query('DROP TABLE IF EXISTS '
-                    . $wpdb->prefix . '_e11_recommended_links');
+                    . $wpdb->prefix . 'e11_recommended_links');

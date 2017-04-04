@@ -79,7 +79,11 @@ class e11RecommendedLinksAdmin {
             url varchar(1024) NOT NULL,
             description text NOT NULL DEFAULT "",
             
-            PRIMARY KEY (id)
+            PRIMARY KEY (id),
+            INDEX (created),
+            INDEX (title),
+            INDEX (url),
+            INDEX (display_mode, created)
       );';
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
