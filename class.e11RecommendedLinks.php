@@ -64,16 +64,6 @@ class e11RecommendedLinks {
   /**
    * Generate HTML to display recommended links within a list of posts.
    *
-   * [TODO] Right now this assumes the posts are being displayed in
-   * descending order by post date, and might not work with "sticky"
-   * posts.  The function only has meaning if posts are in order by
-   * date.  Maybe check $wp_query to see if sorting by date/post_date
-   * and whether that's ASC/DESC and adjust behavior and display order
-   * of selected links.  Function is_sticky($post_ID) can be used to
-   * check and ignore sticky post dates, searching from the beginning
-   * of the $wp_query->posts array until the first non-sticky post is
-   * found.
-   *
    * [TODO] Ensure the timezones of recommended links match WordPress
    *        config / timezones of posts.
    */
@@ -107,6 +97,23 @@ class e11RecommendedLinks {
     $cur_page = (get_query_var('paged')) ? get_query_var('paged') : 1;
     $num_pages = $wp_query->max_num_pages;
 
+    // Determine query sort parameters.  Don't display links if posts aren't
+    // being sorted by post date.  Otherwise, note whether the posts are being
+    // displayed in ascending or descending order.
+
+    $order = get_query_var('order');
+    $order_by = get_query_var('orderby');
+
+    if (!empty($order_by) && $order_by != 'post_date' && $order_by != 'date') {
+      return;
+    }
+
+    if (strcasecmp($order, 'asc') == 0) {
+      $sortAscending = true;
+    } else {
+      $sortAscending = false;
+    }
+
     // Set from/to date for link query.
 
     $date_from = null;
@@ -115,39 +122,80 @@ class e11RecommendedLinks {
     if ($num_pages == 1) {
       // Select all links if only one page of posts exists.
 
-    } elseif ($cur_page != $num_pages) {
-      // If not the last page, show all links between the newest post and
-      // the first published post after the oldest post.
+    } elseif ($sortAscending == false) {
+      if ($cur_page != $num_pages) {
+        // If not the last page, show all links between the newest post and
+        // the first published post after the oldest post.
 
-      $date = get_the_date('Y-m-d H:i:s',
-                              $wp_query->posts[count($wp_query->posts) - 1]);
+        $date = get_the_date('Y-m-d H:i:s',
+          $wp_query->posts[count($wp_query->posts) - 1]);
 
-      $query = "
-          SELECT $wpdb->posts.post_date 
-          FROM $wpdb->posts 
-          WHERE $wpdb->posts.post_date < '$date'
-          ORDER BY $wpdb->posts.post_date
-          LIMIT 1
-      ";
+        $query = "
+              SELECT $wpdb->posts.post_date 
+              FROM $wpdb->posts 
+              WHERE $wpdb->posts.post_date < '$date'
+              AND $wpdb->posts.post_type = 'post'
+              AND $wpdb->posts.post_status = 'publish'
+              ORDER BY $wpdb->posts.post_date
+              LIMIT 1
+          ";
 
-      $date = $wpdb->get_var($query);
+        $date = $wpdb->get_var($query);
 
-      if ($date !== null) {
-        $date_from = $date;
-      }
+        if ($date !== null) {
+          $date_from = $date;
+        }
 
-      // Allow links that are newer than published posts to be
-      // displayed on the first page.
+        // Allow links that are newer than published posts to be
+        // displayed on the first page.
 
-      if ($cur_page != 1) {
+        if ($cur_page != 1) {
+          $date_to = get_the_date('Y-m-d H:i:s', $wp_query->posts[0]);
+        }
+
+      } else {
+        // If on the last page, show all links older than the newest post
+        // on the page.
+
         $date_to = get_the_date('Y-m-d H:i:s', $wp_query->posts[0]);
       }
+    } else { // $sortAscending == true
+      if ($cur_page != $num_pages) {
+        // If not the last page, show all links between the oldest post and
+        // the first published post after the newest post.
 
-    } else {
-      // If on the last page, show all links older than the newest post
-      // on the page.
+        $date = get_the_date('Y-m-d H:i:s',
+          $wp_query->posts[count($wp_query->posts) - 1]);
 
-      $date_to = get_the_date('Y-m-d H:i:s', $wp_query->posts[0]);
+        $query = "
+              SELECT $wpdb->posts.post_date 
+              FROM $wpdb->posts 
+              WHERE $wpdb->posts.post_date > '$date'
+              AND $wpdb->posts.post_type = 'post'
+              AND $wpdb->posts.post_status = 'publish'
+              ORDER BY $wpdb->posts.post_date
+              LIMIT 1
+          ";
+
+        $date = $wpdb->get_var($query);
+
+        if ($date !== null) {
+          $date_to = $date;
+        }
+
+        // Allow links that are older than published posts to be
+        // displayed on the first page.
+
+        if ($cur_page != 1) {
+          $date_from = get_the_date('Y-m-d H:i:s', $wp_query->posts[0]);
+        }
+
+      } else {
+        // If on the last page, show all links newer than the oldest post
+        // on the page.
+
+        $date_from = get_the_date('Y-m-d H:i:s', $wp_query->posts[0]);
+      }
     }
 
     // Build "WHERE" statement for link query.
@@ -169,12 +217,16 @@ class e11RecommendedLinks {
 
     // Retrieve links from database.
 
+    if ($sortAscending == true) {
+      $order = 'ORDER BY created ASC';
+    } else {
+      $order = 'ORDER BY created DESC';
+    }
+
     $links = $wpdb->get_results('
       SELECT created, title, url, description 
       FROM ' . self::$linksTableName
-      . $where . '
-      ORDER BY created DESC
-    ');
+    . $where . $order);
 
     // Output nothing if no links found.
 
@@ -193,12 +245,26 @@ class e11RecommendedLinks {
       //        is written.
 
       $created = DateTime::createFromFormat('Y-m-d H:i:s', $link->created)->format($date_format);
+
+      // Get host string for display, stripping leading 'www.' if present.
+
+      $host = parse_url($link->url, PHP_URL_HOST);
+
+      if (substr($host, 0, 4) == 'www.') {
+          $host = substr($host, 4);
+      }
 ?>
       <div class="link">
         <div class="link-date"><?php echo $created; ?></div>
         <div class="link-label">
-          <div class="link-title"><a href="<?php echo esc_url($link->url); ?>"><?php echo $link->title; ?></a></div>
+          <div class="link-title"><a href="<?php echo esc_url($link->url); ?>"><?php echo $link->title; ?></a> <span class="link-host">(<?php echo esc_html($host); ?>)</span></div>
+<?php
+        if (!empty($link->description)) {
+?>
           <div class="link-description"><?php echo $link->description; ?></div>
+<?php
+        }
+?>
         </div>
       </div>
 <?php

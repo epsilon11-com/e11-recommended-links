@@ -17,9 +17,10 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+require_once('class-wp-list-table.php');
 require_once( ABSPATH . '/wp-admin/includes/admin.php' );
 
-class RecommendedLinksListTable extends WP_List_Table {
+class RecommendedLinksListTable extends WP_List_Table_4_7_3 {
 
   /**
    * Constructor.  Calls the WP_List_Table constructor with parameters useful

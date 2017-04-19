@@ -13,7 +13,7 @@ div.e11-recommended-links .title {
 }
 
 div.e11-recommended-links .link {
-    padding: 0.75em 0;
+    padding: 0.25em 0;
 
     position: relative;
 
@@ -22,7 +22,7 @@ div.e11-recommended-links .link {
 
 div.e11-recommended-links .link .link-date {
     position: absolute;
-    top: 0.75em;
+    top: 0.25em;
     left: 0.75em;
     display: inline-block;
     width: 5em;
@@ -35,8 +35,13 @@ div.e11-recommended-links .link .link-label {
     margin-right: 0.5em;
 }
 
-div.e11-recommended-links .link .link-label .link-title {
+div.e11-recommended-links .link .link-label .link-title a {
     font-weight: bold;
+}
+
+div.e11-recommended-links .link .link-label .link-host {
+    font-size: .75em;
+    color: #777;
 }
 
 div.e11-recommended-links .link .link-label .link-description {
